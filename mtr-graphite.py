@@ -16,13 +16,13 @@ INTERVAL=30
 MTR_HOSTS=["google.se",
            "www.sunet.se"]
 
-GRAPHITES_HOST="172.0.0.1"
+GRAPHITES_HOST="192.168.1.199"
 
 
 def save_data(mtr_result):
-    grafhite  = graphitesend.init(graphite_server=GRAPHITES_HOST)
     report_time = dt.datetime.utcnow()
     destination = mtr_result['report']['mtr']['dst']
+    destination = destination.replace(".","_")
     
     for hub in mtr_result['report']['hubs']:
         # persist the hub entry
@@ -31,11 +31,14 @@ def save_data(mtr_result):
             hop = "0" + hub['count'] + "-" + hub['host']
         else:
             hop = hub['count'] + "-" + hub['host']
-        
-        grafhite.send( {
-            'time': report_time,
-            'destination': destination,
-            'hop': hop,
+        hop = hop.replace(".","_")
+        grafhite  = graphitesend.init(group=f"{destination}.{hop}", graphite_server=GRAPHITES_HOST, system_name='mtr')
+
+        grafhite.send_dict( 
+            {
+            #   'time': report_time,
+            # destination': destination,
+            #'hop': hop,
             'loss': hub['Loss%'],
             'snt': hub['Snt'],
             'last': hub['Last'],
@@ -43,7 +46,8 @@ def save_data(mtr_result):
             'best': hub['Best'],
             'wrst': hub['Wrst'],
             'stdev': hub['StDev']
-        })
+        }
+        )
         
         
 
